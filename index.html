@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Era Comparison Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1d428a;
+            --secondary-color: #c9082a;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333;
+            --white: #ffffff;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 8px;
+            margin: 30px 0 20px;
+            font-weight: 500;
+        }
+
+        section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--white);
+            border-radius: 6px;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        input, select {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        .player-card {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .error {
+            color: #d32f2f;
+            padding: 15px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            margin: 15px 0;
+            border-left: 4px solid #d32f2f;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .button-loading {
+            position: relative;
+            padding-right: 40px;
+        }
+
+        .button-loading::after {
+            content: "";
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        /* Tier specific styling */
+        .tier-1-far-superior {
+            background-color: rgba(0, 100, 0, 0.1);
+        }
+        .tier-2-superior {
+            background-color: rgba(0, 128, 0, 0.1);
+        }
+        .tier-3-comparable {
+            background-color: rgba(173, 216, 230, 0.3);
+        }
+        .tier-4-inferior {
+            background-color: rgba(255, 165, 0, 0.1);
+        }
+        .tier-5-far-inferior {
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+
+        .comparison-result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+        }
+
+        .stat-name {
+            font-weight: bold;
+            width: 100px;
+        }
+
+        .stat-value {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="editModal" style="display: none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000;">
+        <h3>Edit Hypothetical Player</h3>
+        <input id="editName" placeholder="Name"><br><br>
+        <input id="editTeam" placeholder="Team"><br><br>
+        <select id="editPosition">
+            <option value="PG">PG</option>
+            <option value="SG">SG</option>
+            <option value="SF">SF</option>
+            <option value="PF">PF</option>
+            <option value="C">C</option>
+        </select><br><br>
+        <input id="editPPG" type="number" step="0.1" placeholder="PPG"><br>
+        <input id="editAPG" type="number" step="0.1" placeholder="APG"><br>
+        <input id="editRPG" type="number" step="0.1" placeholder="RPG"><br>
+        <input id="editSTL" type="number" step="0.1" placeholder="STL"><br>
+        <input id="editBLK" type="number" step="0.1" placeholder="BLK"><br><br>
+        <button onclick="submitEdit()">Save</button>
+        <button onclick="closeEditModal()">Cancel</button>
+    </div>
+    
+    <div class="container">
+        <h1>NBA Era Comparison Tool</h1>
+        
+        <section>
+            <h2>🔍 Search Players</h2>
+            <div class="input-group">
+                <input type="text" id="searchInput1" placeholder="Search Player 1 (e.g. LeBron)" />
+                <input type="text" id="searchInput2" placeholder="Search Player 2 (e.g. Jordan)" />
+                <button id="searchButton" onclick="searchPlayers()">Search Players</button>
+            </div>
+            <div id="searchResults" class="stats-container"></div>
+        </section>
+        
+        <section>
+            <h2>📆 Compare Players by Season</h2>
+            <div class="input-group">
+                <input type="text" id="player1Id" placeholder="Player 1 ID (e.g. 237)" />
+                <input type="text" id="player2Id" placeholder="Player 2 ID (e.g. 1024)" />
+                <input type="text" id="season1" placeholder="Player 1 Season (e.g. 2021-2022)" />
+                <input type="text" id="season2" placeholder="Player 2 Season (e.g. 1990-1991)" />
+                <select id="category">
+                    <option value="overall">Overall</option>
+                    <option value="scoring">Scoring</option>
+                    <option value="rebounding">Rebounding</option>
+                    <option value="playmaking">Playmaking</option>
+                    <option value="defense">Defense</option>
+                </select>
+                <button id="compareButton" onclick="compareBySeason()">Compare Seasons</button>
+            </div>
+            <div id="comparisonResult"></div>
+        </section>
+
+        <section>
+            <h2>🧪 Add Hypothetical Player</h2>
+            <div class="input-group">
+                <input type="text" id="hypoName" placeholder="Player Name" />
+                <input type="text" id="hypoTeam" placeholder="Team" />
+                <select id="hypoPosition">
+                    <option value="PG">PG</option>
+                    <option value="SG">SG</option>
+                    <option value="SF">SF</option>
+                    <option value="PF">PF</option>
+                    <option value="C">C</option>
+                </select>
+                <input type="number" step="0.1" id="hypoPPG" placeholder="PPG" />
+                <input type="number" step="0.1" id="hypoAPG" placeholder="APG" />
+                <input type="number" step="0.1" id="hypoRPG" placeholder="RPG" />
+                <input type="number" step="0.1" id="hypoSTL" placeholder="STL" />
+                <input type="number" step="0.1" id="hypoBLK" placeholder="BLK" />
+                <button onclick="submitHypothetical()">Submit Player</button>
+            </div>
+            <div id="hypoResults" class="stats-container"></div>
+        </section>
+        
+    </div>
+
+    <script>
+        let currentEditingId = null;
+
+        // Dynamic base URL detection
+        const baseURL = 'http://localhost:5001';
+        
+        // Helper functions
+        function setLoading(button, isLoading) {
+            if (isLoading) {
+                button.classList.add('button-loading');
+                button.disabled = true;
+            } else {
+                button.classList.remove('button-loading');
+                button.disabled = false;
+            }
+        }
+
+        function displayError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="error">⚠️ ${message}</div>`;
+        }
+
+        function clearElement(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        function formatTierClassName(tierName) {
+            return tierName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        }
+
+        // API Functions
+        async function fetchWithHandling(url, options = {}) {
+            try {
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        // Main Functions
+        async function submitHypothetical() {
+    const player = {
+        name: document.getElementById("hypoName").value,
+        team: document.getElementById("hypoTeam").value,
+        position: document.getElementById("hypoPosition").value,
+        PPG: parseFloat(document.getElementById("hypoPPG").value),
+        APG: parseFloat(document.getElementById("hypoAPG").value),
+        RPG: parseFloat(document.getElementById("hypoRPG").value),
+        STL: parseFloat(document.getElementById("hypoSTL").value),
+        BLK: parseFloat(document.getElementById("hypoBLK").value),
+    };
+
+    try {
+        const response = await fetch(`${baseURL}/hypotheticals`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(player),
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+            alert(result.error || "Failed to submit player.");
+            return;
+        }
+
+        alert("Player added successfully!");
+        loadHypotheticals();
+
+    } catch (error) {
+        console.error("Error submitting player:", error);
+        alert("Submission failed.");
+    }
+}
+
+async function loadHypotheticals() {
+    try {
+        const res = await fetch(`${baseURL}/hypotheticals`);
+        const data = await res.json();
+
+        const container = document.getElementById("hypoResults");
+        container.innerHTML = "";
+
+        data.forEach(player => {
+            const div = document.createElement("div");
+            div.className = "card player-card";
+            div.innerHTML = `
+    <h4>${player.name} (${player.position} - ${player.team})</h4>
+    <p><strong>PPG:</strong> ${player.PPG} | <strong>APG:</strong> ${player.APG} | <strong>RPG:</strong> ${player.RPG}</p>
+    <p><strong>STL:</strong> ${player.STL} | <strong>BLK:</strong> ${player.BLK}</p>
+    <p><strong>Overall Tier:</strong> ${player.overall_tier}</p>
+    <p><strong>Position Tier:</strong> ${player.position_tier}</p>
+    <button onclick="deleteHypothetical(${player.id})">🗑 Delete</button>
+    <button onclick="editHypothetical(${player.id})">✏️ Edit</button>
+`;
+
+            container.appendChild(div);
+        });
+
+    } catch (error) {
+        console.error("Error loading hypotheticals:", error);
+    }
+}
+function editHypothetical(playerId) {
+    currentEditingId = playerId;
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    currentEditingId = null;
+
+    // Clear fields
+    document.getElementById('editName').value = '';
+    document.getElementById('editTeam').value = '';
+    document.getElementById('editPosition').value = 'PG';
+    document.getElementById('editPPG').value = '';
+    document.getElementById('editAPG').value = '';
+    document.getElementById('editRPG').value = '';
+    document.getElementById('editSTL').value = '';
+    document.getElementById('editBLK').value = '';
+}
+
+
+async function submitEdit() {
+    const payload = {
+        name: document.getElementById('editName').value,
+        team: document.getElementById('editTeam').value,
+        position: document.getElementById('editPosition').value,
+        PPG: parseFloat(document.getElementById('editPPG').value),
+        APG: parseFloat(document.getElementById('editAPG').value),
+        RPG: parseFloat(document.getElementById('editRPG').value),
+        STL: parseFloat(document.getElementById('editSTL').value),
+        BLK: parseFloat(document.getElementById('editBLK').value)
+    };
+
+    try {
+        const res = await fetch(`${baseURL}/hypotheticals/${currentEditingId}`, {
+            method: 'PUT',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+            alert("Updated successfully!");
+            closeEditModal();
+            loadHypotheticals();
+        } else {
+            alert(result.error || "Update failed");
+        }
+    } catch (error) {
+        console.error("Update error:", error);
+        alert("Could not update player.");
+    }
+}
+
+// Auto-load hypotheticals on page load
+document.addEventListener("DOMContentLoaded", loadHypotheticals);
+
+        async function searchPlayers() {
+            const search1 = document.getElementById('searchInput1').value.trim();
+            const search2 = document.getElementById('searchInput2').value.trim();
+            
+            if (!search1 || !search2) {
+                displayError('searchResults', 'Please enter names for both players');
+                return;
+            }
+            
+            try {
+                setLoading(document.getElementById('searchButton'), true);
+                clearElement('searchResults');
+                
+                // Search for both players
+                const [results1, results2] = await Promise.all([
+                    fetchWithHandling(`${baseURL}/search?name=${encodeURIComponent(search1)}`),
+                    fetchWithHandling(`${baseURL}/search?name=${encodeURIComponent(search2)}`)
+                ]);
+                
+                const searchResults = document.getElementById('searchResults');
+                
+                // Display player 1 results
+                const player1Div = document.createElement('div');
+                player1Div.innerHTML = '<h3>Player 1 Results</h3>';
+                if (results1.length === 0) {
+                    player1Div.innerHTML += '<div class="card">No players found matching your search</div>';
+                } else {
+                    results1.forEach(player => {
+                        const card = document.createElement('div');
+                        card.className = 'card player-card';
+                        card.innerHTML = `
+                            <h4>${player.name}</h4>
+                            <p><strong>ID:</strong> ${player.player_id}</p>
+                            <p><strong>Team:</strong> ${player.team}</p>
+                            <p><strong>Position:</strong> ${player.position}</p>
+                            <button onclick="setPlayerId('player1Id', ${player.player_id}, '${player.name}')">Select as Player 1</button>
+                        `;
+                        player1Div.appendChild(card);
+                    });
+                }
+                searchResults.appendChild(player1Div);
+                
+                // Display player 2 results
+                const player2Div = document.createElement('div');
+                player2Div.innerHTML = '<h3>Player 2 Results</h3>';
+                if (results2.length === 0) {
+                    player2Div.innerHTML += '<div class="card">No players found matching your search</div>';
+                } else {
+                    results2.forEach(player => {
+                        const card = document.createElement('div');
+                        card.className = 'card player-card';
+                        card.innerHTML = `
+                            <h4>${player.name}</h4>
+                            <p><strong>ID:</strong> ${player.player_id}</p>
+                            <p><strong>Team:</strong> ${player.team}</p>
+                            <p><strong>Position:</strong> ${player.position}</p>
+                            <button onclick="setPlayerId('player2Id', ${player.player_id}, '${player.name}')">Select as Player 2</button>
+                        `;
+                        player2Div.appendChild(card);
+                    });
+                }
+                searchResults.appendChild(player2Div);
+                
+            } catch (error) {
+                displayError('searchResults', 'Search failed. Please try again.');
+            } finally {
+                setLoading(document.getElementById('searchButton'), false);
+            }
+        }
+
+        function setPlayerId(fieldId, playerId, playerName) {
+            document.getElementById(fieldId).value = playerId;
+            alert(`${playerName} (ID: ${playerId}) selected`);
+        }
+        async function deleteHypothetical(playerId) {
+    if (!confirm('Are you sure you want to delete this player?')) return;
+
+    try {
+        const res = await fetch(`${baseURL}/hypotheticals/${playerId}`, { method: 'DELETE' });
+        const result = await res.json();
+
+        if (res.ok) {
+            alert(result.message);
+            loadHypotheticals();
+        } else {
+            alert(result.error || "Delete failed");
+        }
+    } catch (error) {
+        console.error("Delete error:", error);
+        alert("Could not delete player.");
+    }
+}
+
+
+        async function compareBySeason() {
+            const player1Id = document.getElementById('player1Id').value.trim();
+            const player2Id = document.getElementById('player2Id').value.trim();
+            const season1 = document.getElementById('season1').value.trim();
+            const season2 = document.getElementById('season2').value.trim();
+            const category = document.getElementById('category').value;
+            
+            if (!player1Id || !player2Id || !season1 || !season2) {
+                displayError('comparisonResult', 'Please fill all required fields');
+                return;
+            }
+            
+            try {
+                setLoading(document.getElementById('compareButton'), true);
+                clearElement('comparisonResult');
+                
+                const data = await fetchWithHandling(
+                    `${baseURL}/compare_by_season_v2?player1_id=${player1Id}&player2_id=${player2Id}&season1=${encodeURIComponent(season1)}&season2=${encodeURIComponent(season2)}&category=${category}`
+                );
+                
+                if (!data || data.error) {
+                    displayError('comparisonResult', data?.error || 'Comparison failed');
+                    return;
+                }
+                
+                const resultDiv = document.getElementById('comparisonResult');
+                
+                // Create comparison cards
+                const playerCard = (player) => {
+                    const tierClass = formatTierClassName(player.position_tier || player.overall_tier || '');
+                    return `
+                        <div class="card ${tierClass}">
+                            <h3>${player.name} (${player.season})</h3>
+                            <p><strong>Overall Tier:</strong> ${player.overall_tier || 'N/A'}</p>
+                            <p><strong>Position Tier:</strong> ${player.position_tier || 'N/A'}</p>
+
+                            <div class="stat-row">
+                                <span class="stat-name">Points:</span>
+                                <span class="stat-value">${player.PPG?.toFixed(1) || 'N/A'}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-name">Assists:</span>
+                                <span class="stat-value">${player.APG?.toFixed(1) || 'N/A'}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-name">Rebounds:</span>
+                                <span class="stat-value">${player.RPG?.toFixed(1) || 'N/A'}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-name">Steals:</span>
+                                <span class="stat-value">${player.STL?.toFixed(1) || 'N/A'}</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-name">Blocks:</span>
+                                <span class="stat-value">${player.BLK?.toFixed(1) || 'N/A'}</span>
+                            </div>
+                        </div>
+                    `;
+                };
+                
+                resultDiv.innerHTML = `
+                    <h3>Comparison Results (${data.category})</h3>
+                    <div class="stats-container">
+                        ${playerCard(data.player1)}
+                        ${playerCard(data.player2)}
+                    </div>
+                `;
+                
+            } catch (error) {
+                displayError('comparisonResult', 'Failed to compare players. Please try again.');
+            } finally {
+                setLoading(document.getElementById('compareButton'), false);
+            }
+        }
+
+        // Initialize with some sample data for testing
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('player1Id').value = '237';  // LeBron James
+            document.getElementById('player2Id').value = '1024'; // Michael Jordan
+            document.getElementById('season1').value = '2021-2022';
+            document.getElementById('season2').value = '1990-1991';
+        });
+    </script>
+</body>
+</html>
